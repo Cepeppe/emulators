@@ -1,0 +1,67 @@
+package chip_8
+
+/*
+	Chip-8 has 16 general purpose 8-bit registers,
+	usually referred to as Vx, where x is a hexadecimal digit (0 through F).
+		VF register should not be used by any program,
+		as it is used as a flag by some instructions.
+
+	There is also a 16-bit register called I.
+	This register is generally used to store memory addresses,
+	so only the lowest (rightmost) 12 bits are usually used.
+
+	There are two special 8-bit registers used as timers, the DT and the ST.
+		-The delay timer DT is automatically decremented with a frequency of 60 Hz
+		(60 times per second) whenever its value is greater than zero (> 0).
+		That’s all it does.
+		Its value can be read into a registry and written with FX07 and FX15 respectively.
+		-The sound timer ST is also automatically decremented with a frequency of 60 Hz
+		when its value is greater than zero.
+		Additionally, when this happens (ST > 0) the system sounds the buzzer to produce a beep.
+		So, for example, if you want your program to sound the buzzer for one second,
+		you need to write 0x3C to ST. It can be set with FX18 but it can’t be read.
+
+	The program counter (PC) should be 16-bit,
+	and is used to store the currently executing address
+
+	The stack pointer (SP) can be 8-bit,
+	it is used to point to the topmost level of the stack
+*/
+
+const (
+	V0 = 0
+	V1 = 1
+	V2 = 2
+	V3 = 3
+	V4 = 4
+	V5 = 5
+	V6 = 6
+	V7 = 7
+	V8 = 8
+	V9 = 9
+	VA = 10
+	VB = 11
+	VC = 12
+	VD = 13
+	VE = 14
+	VF = 15
+)
+
+//General purpose registers
+// VF register should not be used by any program
+var registers [16]uint8
+
+//I register. only the lowest (rightmost) 12 bits are usually used
+var I uint16
+
+//The delay timer
+var DT uint8
+
+//The sound timer
+var DS uint8
+
+//Program Counter
+var PC uint16
+
+//Stack Pointer
+var SP uint8
