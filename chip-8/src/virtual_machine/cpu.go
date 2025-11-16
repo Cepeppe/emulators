@@ -1,4 +1,4 @@
-package chip_8
+package chip8
 
 /*
 	Chip-8 has 16 general purpose 8-bit registers,
@@ -47,21 +47,35 @@ const (
 	VF = 15
 )
 
-//General purpose registers
-// VF register should not be used by any program
-var registers [16]uint8
+type CPU struct {
 
-//I register. only the lowest (rightmost) 12 bits are usually used
-var I uint16
+	//General purpose registers
+	// VF register should not be used by any program
+	V_registers [16]uint8
 
-//The delay timer
-var DT uint8
+	//I register. only the lowest (rightmost) 12 bits are usually used
+	I uint16
 
-//The sound timer
-var DS uint8
+	//The sound timer
+	ST uint8
 
-//Program Counter
-var PC uint16
+	//The delay timer
+	DT uint8
 
-//Stack Pointer
-var SP uint8
+	//Program Counter
+	PC uint16
+
+	//Current opcode
+	curr_opcode uint16
+}
+
+func (cpu *CPU) Init() {
+	for i := 0; i < 16; i++ {
+		cpu.V_registers[i] = uint8(0)
+	}
+	cpu.I = uint16(0)
+	cpu.ST = uint8(0)
+	cpu.DT = uint8(0)
+	cpu.PC = PROGRAM_MEMORY_START
+	cpu.curr_opcode = 0
+}
