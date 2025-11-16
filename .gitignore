@@ -1,0 +1,42 @@
+# --- Go build output ---
+# Executables, binaries, test binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Common build directories
+bin/
+build/
+dist/
+
+# Coverage / profiling files
+coverage*.out
+*.coverprofile
+*.prof
+
+# --- Go modules ---
+# go.mod and go.sum must stay versioned
+
+# --- Editors / IDEs ---
+.vscode/
+.idea/
+*.iml
+
+# Vim / other editor swap files
+*~
+*.swp
+*.swo
+
+# --- OS-specific files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs / temp ---
+*.log
+*.tmp
+tmp/
