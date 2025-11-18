@@ -55,6 +55,7 @@ func (vm *VM) ExecuteNextInstruction() error {
 		return nil
 	}
 
+	
 	err = vm.decode(instr)
 }
 
