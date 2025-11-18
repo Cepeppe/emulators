@@ -1,6 +1,7 @@
 package chip8
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -47,6 +48,47 @@ func (mem *MEM) LoadProgramFromRom(file string) error {
 		mem.memory[PROGRAM_MEMORY_START+uint16(idx)] = bytes_arr[idx]
 	}
 	return nil
+}
+
+// startAddress is inclusive, endAddress is exclusive
+func (mem *MEM) Dump(startAddress uint16, endAddress uint16) {
+
+	var effective_end = endAddress
+
+	if effective_end >= MEMORY_SPACE_BYTES {
+		effective_end = MEMORY_SPACE_BYTES
+	}
+
+	fmt.Printf("\n	MEM DUMP FROM %x to %x\n", startAddress, endAddress)
+	fmt.Printf("\n\t+------------------------------------------------------------------------------------------------------------------------------------+\n")
+
+	for i := startAddress; i < effective_end; i++ {
+		if i%32 == 0 {
+			fmt.Printf("\t| %04d -> 0x%03x |", i, i)
+		}
+
+		if i%2 == 0 {
+			fmt.Printf(" ")
+		}
+
+		fmt.Printf("%02x", mem.memory[i])
+
+		if i%32 == 31 { //4095-31=4064
+			fmt.Printf(" | ")
+			for j := i - (i % 32); j <= i; j++ {
+				car := uint8(mem.memory[j])
+
+				if car < 33 || car > 126 {
+					fmt.Printf("·")
+				} else {
+					fmt.Printf("%s", string(car))
+				}
+			}
+			fmt.Println(" |")
+		}
+
+	}
+	fmt.Printf("\t+------------------------------------------------------------------------------------------------------------------------------------+\n")
 }
 
 func (m *MEM) LoadFont() {

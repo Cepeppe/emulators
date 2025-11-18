@@ -31,6 +31,8 @@ func NewGame(romPath string) (*Game, error) {
 		return nil, err
 	}
 
+	g.memory.Dump(0x000, 4096)
+
 	// Initialize cpu
 	g.cpu.Init()
 
