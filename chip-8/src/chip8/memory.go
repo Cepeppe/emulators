@@ -59,7 +59,7 @@ func (mem *MEM) Dump(startAddress uint16, endAddress uint16) {
 		effective_end = MEMORY_SPACE_BYTES
 	}
 
-	fmt.Printf("\n	MEM DUMP FROM %x to %x\n", startAddress, endAddress)
+	fmt.Printf("\n	MEM DUMP FROM 0x%x to 0x%x\n", startAddress, endAddress)
 	fmt.Printf("\n\t+------------------------------------------------------------------------------------------------------------------------------------+\n")
 
 	for i := startAddress; i < effective_end; i++ {
@@ -73,7 +73,7 @@ func (mem *MEM) Dump(startAddress uint16, endAddress uint16) {
 
 		fmt.Printf("%02x", mem.memory[i])
 
-		if i%32 == 31 { //4095-31=4064
+		if i%32 == 31 {
 			fmt.Printf(" | ")
 			for j := i - (i % 32); j <= i; j++ {
 				car := uint8(mem.memory[j])
