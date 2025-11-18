@@ -12,7 +12,7 @@ import (
 func main() {
 	romPath := "..\\rom_games\\RPS.ch8" // ROM path can be set here (e.g., "../rom_games/PONG.ch8").
 
-	game, err := c8.NewVM(romPath)
+	vm, err := c8.NewVM(romPath)
 	if err != nil {
 		fmt.Println("Error while trying to load program:", err.Error())
 		os.Exit(1)
@@ -23,7 +23,7 @@ func main() {
 	ebiten.SetWindowTitle("CHIP-8 Emulator")
 
 	// Start the Ebiten game loop.
-	if err := ebiten.RunGame(game); err != nil {
+	if err := ebiten.RunGame(vm); err != nil {
 		log.Fatal(err)
 	}
 }
