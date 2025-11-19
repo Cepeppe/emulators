@@ -59,7 +59,7 @@ func (mem *MEM) Dump(startAddress uint16, endAddress uint16) {
 		effective_end = MEMORY_SPACE_BYTES
 	}
 
-	fmt.Printf("\n	MEM DUMP FROM 0x%x to 0x%x\n", startAddress, endAddress)
+	fmt.Printf("\n	MEMORY STATE DUMP FROM 0x%x to 0x%x", startAddress, endAddress)
 	fmt.Printf("\n\t+------------------------------------------------------------------------------------------------------------------------------------+\n")
 
 	for i := startAddress; i < effective_end; i++ {

@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"strings"
+)
+
 /*
 	Chip-8 has 16 general purpose 8-bit registers,
 	usually referred to as Vx, where x is a hexadecimal digit (0 through F).
@@ -47,6 +52,8 @@ const (
 	VF = 15
 )
 
+const cpuDumpInnerWidth = 55
+
 type CPU struct {
 
 	//General purpose registers
@@ -78,4 +85,46 @@ func (cpu *CPU) Init() {
 	cpu.DT = uint8(0)
 	cpu.PC = PROGRAM_MEMORY_START
 	cpu.curr_opcode = 0
+}
+
+func (cpu *CPU) Dump() {
+	// Local helpers for aligned box drawing
+	printSep := func() {
+		// if you are asking why the +2 in the following line, don't. It just works and it's a pretty print so it's not an issue
+		fmt.Printf("\t+%s+\n", strings.Repeat("-", cpuDumpInnerWidth+2))
+	}
+	printLine := func(text string) {
+		fmt.Printf("\t| %-*s |\n", cpuDumpInnerWidth, text)
+	}
+
+	fmt.Printf("\n\tCPU STATE DUMP\n")
+	printSep()
+	printLine("V REGISTERS (V0-VF)   [bit view] (dec)")
+	printSep()
+
+	// V0–VF: two registers per line
+	for i := 0; i < 16; i += 2 {
+		v1 := cpu.V_registers[i]
+		v2 := cpu.V_registers[i+1]
+
+		line := fmt.Sprintf(
+			"V%X: %08b (%3d)  V%X: %08b (%3d)",
+			i, v1, v1,
+			i+1, v2, v2,
+		)
+		printLine(line)
+	}
+
+	printSep()
+	printLine("SPECIAL REGISTERS [bit view] (dec)")
+	printSep()
+
+	// All lines share the same internal width; 8-bit registers are left-padded with spaces instead of bits
+	printLine(fmt.Sprintf("I          : %s (%5d)", formatBits16(cpu.I), cpu.I))
+	printLine(fmt.Sprintf("PC         : %s (%5d)", formatBits16(cpu.PC), cpu.PC))
+	printLine(fmt.Sprintf("DT (Delay) : %s (%5d)", formatBits8(cpu.DT), cpu.DT))
+	printLine(fmt.Sprintf("ST (Sound) : %s (%5d)", formatBits8(cpu.ST), cpu.ST))
+	printLine(fmt.Sprintf("curr_opcode: %s (%5d)", formatBits16(cpu.curr_opcode), cpu.curr_opcode))
+
+	printSep()
 }

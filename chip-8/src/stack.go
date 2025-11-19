@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 )
 
 /*
@@ -38,4 +40,47 @@ func (s *STACK) Pop() (uint16, error) {
 	} else {
 		return uint16(0), errors.New("can not pop fron an empty stack")
 	}
+}
+
+func (st *STACK) Dump() {
+	const innerWidth = 76
+
+	printSep := func() {
+		fmt.Printf("\t+%s+\n", strings.Repeat("-", innerWidth+2))
+	}
+	printLine := func(text string) {
+		fmt.Printf("\t| %-*s |\n", innerWidth, text)
+	}
+
+	fmt.Printf("\n\tSTACK STATE DUMP\n")
+	printSep()
+	printLine("STACK CONTENT [index] [bit view] (dec)")
+	printSep()
+
+	// Two stack entries per line
+	for i := 0; i < STACK_SIZE; i += 2 {
+		v1 := st.stack[i]
+
+		var line string
+		if i+1 < STACK_SIZE {
+			v2 := st.stack[i+1]
+			line = fmt.Sprintf(
+				"[%02d]: %s (%5d)  [%02d]: %s (%5d)",
+				i, formatBits16(v1), v1,
+				i+1, formatBits16(v2), v2,
+			)
+		} else {
+			line = fmt.Sprintf(
+				"[%02d]: %s (%5d)",
+				i, formatBits16(v1), v1,
+			)
+		}
+
+		printLine(line)
+	}
+
+	printSep()
+	// SP is int8, show as 8-bit value with padding like other 8-bit registers
+	printLine(fmt.Sprintf("SP (stack pointer): %s (%3d)", formatBits8(uint8(st.SP)), st.SP))
+	printSep()
 }

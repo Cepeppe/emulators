@@ -51,7 +51,7 @@ func NewVM(romPath string) (*VM, error) {
 		return nil, err
 	}
 
-	vm.mem.Dump(0x000, 4096)
+	vm.Dump()
 
 	// Initialize cpu
 	vm.cpu.Init()
@@ -192,4 +192,12 @@ func (vm *VM) decode_execute(instr uint16) error {
 
 func execDisplay(vm *VM) error {
 	return nil
+}
+
+func (vm *VM) Dump() {
+	vm.mem.Dump(0x00, 0x1000) //0, 4096
+	vm.cpu.Dump()
+	vm.stack.Dump()
+	vm.keypad.Dump()
+	vm.display.Dump()
 }

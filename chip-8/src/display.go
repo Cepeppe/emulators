@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -48,7 +50,7 @@ import (
 const (
 	DISPLAY_LENGTH = 64
 	DISPLAY_HEIGHT = 32
-	DISPLAY_SCALE  = 10
+	DISPLAY_SCALE  = 20
 )
 
 type DISPLAY struct {
@@ -144,4 +146,48 @@ func (display *DISPLAY) Draw(screen *ebiten.Image) {
 	// Draw the framebuffer (which is already scaled) onto the Ebiten screen.
 	op := &ebiten.DrawImageOptions{}
 	screen.DrawImage(display.fb, op)
+}
+
+func (d *DISPLAY) Dump() {
+	const innerWidth = 70
+
+	printSep := func() {
+		fmt.Printf("\t+%s+\n", strings.Repeat("-", innerWidth+2))
+	}
+	printLine := func(text string) {
+		fmt.Printf("\t| %-*s |\n", innerWidth, text)
+	}
+
+	fmt.Printf("\n\tDISPLAY STATE DUMP\n")
+	printSep()
+	printLine("DISPLAY PIXELS (0 = OFF, 1 = ON)")
+	printSep()
+
+	// One line per display row
+	for y := 0; y < DISPLAY_HEIGHT; y++ {
+		var sb strings.Builder
+
+		// Row prefix (kept short so the whole line stays <= innerWidth)
+		sb.WriteString(fmt.Sprintf("Y=%02d: ", y))
+
+		// Expand packed bits: MSB of each byte is leftmost pixel
+		for xByte := 0; xByte < DISPLAY_LENGTH/8; xByte++ {
+			b := d.pixels[y][xByte]
+			for bit := 7; bit >= 0; bit-- {
+				if (b & (1 << bit)) != 0 {
+					sb.WriteByte('1')
+				} else {
+					sb.WriteByte('0')
+				}
+			}
+		}
+
+		printLine(sb.String())
+	}
+
+	printSep()
+	printLine(fmt.Sprintf("scale: %d", d.scale))
+	printLine(fmt.Sprintf("dirty: %t", d.dirty))
+	printLine(fmt.Sprintf("fb pointer: %p", d.fb))
+	printSep()
 }

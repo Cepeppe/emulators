@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -89,4 +92,60 @@ func (k *KEYPAD) updatePressedKeys() {
 	k.keys_state[KEY_0] = ebiten.IsKeyPressed(ebiten.KeyX)
 	k.keys_state[KEY_B] = ebiten.IsKeyPressed(ebiten.KeyC)
 	k.keys_state[KEY_F] = ebiten.IsKeyPressed(ebiten.KeyV)
+}
+
+func (k *KEYPAD) Dump() {
+	const innerWidth = 54
+
+	printSep := func() {
+		fmt.Printf("\t+%s+\n", strings.Repeat("-", innerWidth+2))
+	}
+	printLine := func(text string) {
+		fmt.Printf("\t| %-*s |\n", innerWidth, text)
+	}
+	keyState := func(b bool) string {
+		if b {
+			return "DOWN"
+		}
+		return "UP  "
+	}
+
+	fmt.Printf("\n\tKEYPAD STATE DUMP\n")
+	printSep()
+	printLine("CHIP-8 KEYPAD (native layout) - key: state")
+	printSep()
+
+	// Row 1: 1 2 3 C
+	printLine(fmt.Sprintf("1: %s   2: %s   3: %s   C: %s",
+		keyState(k.keys_state[KEY_1]),
+		keyState(k.keys_state[KEY_2]),
+		keyState(k.keys_state[KEY_3]),
+		keyState(k.keys_state[KEY_C]),
+	))
+
+	// Row 2: 4 5 6 D
+	printLine(fmt.Sprintf("4: %s   5: %s   6: %s   D: %s",
+		keyState(k.keys_state[KEY_4]),
+		keyState(k.keys_state[KEY_5]),
+		keyState(k.keys_state[KEY_6]),
+		keyState(k.keys_state[KEY_D]),
+	))
+
+	// Row 3: 7 8 9 E
+	printLine(fmt.Sprintf("7: %s   8: %s   9: %s   E: %s",
+		keyState(k.keys_state[KEY_7]),
+		keyState(k.keys_state[KEY_8]),
+		keyState(k.keys_state[KEY_9]),
+		keyState(k.keys_state[KEY_E]),
+	))
+
+	// Row 4: A 0 B F
+	printLine(fmt.Sprintf("A: %s   0: %s   B: %s   F: %s",
+		keyState(k.keys_state[KEY_A]),
+		keyState(k.keys_state[KEY_0]),
+		keyState(k.keys_state[KEY_B]),
+		keyState(k.keys_state[KEY_F]),
+	))
+
+	printSep()
 }
