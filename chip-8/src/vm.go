@@ -22,17 +22,19 @@ type VM struct {
 
 // Update is called approximately 60 times per second.
 // CPU steps, timers, and input handling will be placed here.
-func (g *VM) Update() error {
+func (vm *VM) Update() error {
+
+	vm.keypad.updatePressedKeys()
 	return nil
 }
 
 // Draw is called every frame to render the current display state.
-func (g *VM) Draw(screen *ebiten.Image) {
-	g.display.Draw(screen)
+func (vm *VM) Draw(screen *ebiten.Image) {
+	vm.display.Draw(screen)
 }
 
 // Layout defines the logical resolution of the window.
-func (g *VM) Layout(outsideWidth, outsideHeight int) (int, int) {
+func (vm *VM) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return DISPLAY_LENGTH * DISPLAY_SCALE, DISPLAY_HEIGHT * DISPLAY_SCALE
 }
 
