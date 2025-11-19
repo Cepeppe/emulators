@@ -94,7 +94,7 @@ func (mem *MEM) Dump(startAddress uint16, endAddress uint16) {
 }
 
 // Loads sprites that are used to draw the screen
-func (m *MEM) LoadFont() {
+func (m *MEM) LoadSprites() {
 
 	// 0
 	m.memory[0x050] = 0xF0 // 11110000
