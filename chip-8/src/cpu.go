@@ -63,12 +63,6 @@ type CPU struct {
 	//I register. only the lowest (rightmost) 12 bits are usually used
 	I uint16
 
-	//The sound timer
-	ST uint8
-
-	//The delay timer
-	DT uint8
-
 	//Program Counter
 	PC uint16
 
@@ -81,8 +75,7 @@ func (cpu *CPU) Init() {
 		cpu.V_registers[i] = uint8(0)
 	}
 	cpu.I = uint16(0)
-	cpu.ST = uint8(0)
-	cpu.DT = uint8(0)
+	
 	cpu.PC = PROGRAM_MEMORY_START
 	cpu.curr_opcode = 0
 }
@@ -122,8 +115,6 @@ func (cpu *CPU) Dump() {
 	// All lines share the same internal width; 8-bit registers are left-padded with spaces instead of bits
 	printLine(fmt.Sprintf("I          : %s (%5d)", formatBits16(cpu.I), cpu.I))
 	printLine(fmt.Sprintf("PC         : %s (%5d)", formatBits16(cpu.PC), cpu.PC))
-	printLine(fmt.Sprintf("DT (Delay) : %s (%5d)", formatBits8(cpu.DT), cpu.DT))
-	printLine(fmt.Sprintf("ST (Sound) : %s (%5d)", formatBits8(cpu.ST), cpu.ST))
 	printLine(fmt.Sprintf("curr_opcode: %s (%5d)", formatBits16(cpu.curr_opcode), cpu.curr_opcode))
 
 	printSep()

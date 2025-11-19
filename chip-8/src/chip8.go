@@ -25,4 +25,6 @@ func main() {
 	if err := ebiten.RunGame(vm); err != nil {
 		log.Fatal(err)
 	}
+
+	
 }

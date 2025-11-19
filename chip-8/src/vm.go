@@ -18,6 +18,7 @@ type VM struct {
 	stack   STACK
 	display DISPLAY
 	keypad  KEYPAD
+	timers  TIMERS
 }
 
 // Update is called approximately 60 times per second.
@@ -51,8 +52,6 @@ func NewVM(romPath string) (*VM, error) {
 		return nil, err
 	}
 
-	vm.Dump()
-
 	// Initialize cpu
 	vm.cpu.Init()
 
@@ -64,6 +63,11 @@ func NewVM(romPath string) (*VM, error) {
 
 	// Initialize display to all black
 	vm.display.Init()
+
+	// Initialize Timers
+	vm.timers.Init()
+
+	vm.Dump()
 
 	return &vm, nil
 }
@@ -200,4 +204,5 @@ func (vm *VM) Dump() {
 	vm.stack.Dump()
 	vm.keypad.Dump()
 	vm.display.Dump()
+	vm.timers.Dump()
 }

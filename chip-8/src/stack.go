@@ -24,7 +24,7 @@ func (s *STACK) Init() {
 }
 
 func (s *STACK) Push(addr uint16) error {
-	if s.SP == -1 || s.SP+1 < STACK_SIZE {
+	if s.SP+1 < STACK_SIZE {
 		s.SP++               //increase stack pointer
 		s.stack[s.SP] = addr //insert data
 		return nil
