@@ -1,4 +1,4 @@
-package chip8
+package main
 
 /*
 	The computers which originally used the Chip-8 Language had
@@ -21,5 +21,5 @@ type KEYPAD struct {
 }
 
 func (k *KEYPAD) Init() {
-	
+
 }

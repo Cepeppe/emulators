@@ -1,4 +1,4 @@
-package chip8
+package main
 
 //n: number of most significative bits to isolate
 //For example:
@@ -6,7 +6,7 @@ package chip8
 //   head  = 00000000 00000111
 //   tail  = 00010000 00000000
 func isolateBits(instr uint16, k uint8) (uint16, uint16) {
-	
+
 	// First 16-k bit more significative, moved towards right
 	head := instr >> (16 - k)
 

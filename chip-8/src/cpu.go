@@ -1,4 +1,4 @@
-package chip8
+package main
 
 /*
 	Chip-8 has 16 general purpose 8-bit registers,
