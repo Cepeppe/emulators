@@ -16,6 +16,10 @@ func main() {
 		fmt.Println("Error while trying to load program:", err.Error())
 		os.Exit(1)
 	}
+	
+	if err := InitAudio(); err != nil {
+        fmt.Println("An error didn't allow to init audio: ", err)
+    }
 
 	// Configure the window size and title.
 	ebiten.SetWindowSize(DISPLAY_LENGTH*DISPLAY_SCALE, DISPLAY_HEIGHT*DISPLAY_SCALE)

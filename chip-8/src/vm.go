@@ -26,6 +26,10 @@ type VM struct {
 func (vm *VM) Update() error {
 
 	vm.keypad.updatePressedKeys()
+	if vm.timers.shouldBeep() {
+		PlayBeep()
+	}
+
 	return nil
 }
 
@@ -115,6 +119,12 @@ func (vm *VM) decode_execute(instr uint16) error {
 	x, nn := isolateBits(nnn, 4+4)
 	y, n := isolateBits(nn, 4+4+4)
 
+	// we save opcode in vm.current_opcode for diagnostic purposes only, for example when dumping cpu
+	// state in case of crash/failure cpu.opcode is unused except that for this purpose but it's a good
+	// choice with minimal tradeoff to have memorized in a fixed place the opcode that possibly broke the house.
+	// And it's just 2 bytes.
+	vm.cpu.curr_opcode = op_code
+
 	switch op_code {
 	case 0x0: //Execute machine language routine: must not be implemented in our case
 		if nnn == 0x0E0 { // 00E0: Clear screenPermalink: It should clear the display, turning all pixels off to 0.
@@ -180,10 +190,32 @@ func (vm *VM) decode_execute(instr uint16) error {
 	case 0xC: // RND (CXNN): RND VX, NN Generate a random byte (from 0 to 255), do a bitwise AND with NN and store the result to VX.
 		vm.exec_rnd_vxnn(x, nn)
 
-	case 0xE:
-		if nn == 0x9E {
+	case 0xD: // DRAW (DXYN): DRW VX, VY, N Draw instruction. For algorithm documentation see the impl or the pdf about dxyn
+		//TODO: IMPL
 
-		} else if nn == 0xA1 {
+	case 0xE:
+		if nn == 0x9E { // SKIP PRESSED (EX9E): SKP VX Skip the next instruction if the key with the value of VX is currently pressed. Basically, increase PC by two if the key corresponding to the value in VX is pressed.
+			vm.exec_skp_vx(x)
+		} else if nn == 0xA1 { // SKIP NOT PRESSED (EXA1): SKNP VX Skip the next instruction if the key with the value of VX is currently not pressed. Basically, increase PC by two if the key corresponding to the value in VX is not pressed
+			vm.exec_sknp_vx(x)
+		}
+
+	case 0xF:
+		if nn == 0x07 { // LOAD (FX07): LD VX, DT Read the delay timer register value into VX.
+			vm.exec_load_vx_dt(x)
+		} else if nn == 0x0A { // LOAD (FX0A): LD VX, K Wait for a key press, and then store the value of the key to VX.
+			vm.exec_load_vx_k(x)
+		} else if nn == 0x15 { // LOAD (FX15): LD DT, VX Load the value of VX into the delay timer DT.
+			vm.exec_load_dt_vx(x)
+		} else if nn == 0x18 { // LOAD (FX18): LD ST, VX Load the value of VX into the sound time ST.
+			vm.exec_load_st_vx(x)
+		} else if nn == 0x1E { // ADDI (FX1E): ADD I, VX Add the values of I and VX, and store the result in I.
+			vm.exec_add_i_vx(x)
+		} else if nn == 0x29 {
+
+		} else if nn == 0x33 {
+
+		} else if nn == 0x55 {
 
 		}
 

@@ -79,3 +79,10 @@ func (t *TIMERS) Dump() {
 	printLine(fmt.Sprintf("DT last decrement ts: %d", t.DT_last_decrement_ts))
 	printSep()
 }
+
+func (t *TIMERS) shouldBeep() bool {
+	if t.ST > 0 {
+		return true
+	}
+	return false
+}

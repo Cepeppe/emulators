@@ -208,7 +208,77 @@ func (vm *VM) exec_rnd_vxnn(x uint16, nn uint16) {
 	vm.cpu.V_registers[x] = uint8(rand.Intn(256)) & uint8(nn)
 }
 
+// (EX9E)
+// Skip the next instruction if the key with the value of VX is currently pressed. Basically, increase PC by two if the key corresponding to the value in VX is pressed.
+//
+// if keys[VX] == 1: PC := PC + 2
 
+func (vm *VM) exec_skp_vx(x uint16){
+	if vm.keypad.keys_state[x]{
+		vm.cpu.PC+=2
+	}
+}
+
+// (EXA1)
+// Skip the next instruction if the key with the value of VX is currently not pressed. Basically, increase PC by two if the key corresponding to the value in VX is not pressed
+//
+// if keys[VX] == 0: PC := PC + 2
+func (vm *VM) exec_sknp_vx(x uint16){
+	if !vm.keypad.keys_state[x]{
+		vm.cpu.PC+=2
+	}
+}
+
+// (FX07)
+// Read the delay timer register value into VX.
+//
+// VX := DT
+func (vm *VM) exec_load_vx_dt(x uint16){
+	vm.cpu.V_registers[x]=vm.timers.DT
+}
+
+// (FX0A)
+// Wait for a key press, and then store the value of the key to VX.
+//
+// K := wait_input() ; VX := K
+func (vm *VM) exec_load_vx_k(x uint16){
+	var key uint8
+	var end bool = false
+	for !end{
+		for i:=0; i<16; i++{
+			if vm.keypad.keys_state[i]{
+				key = uint8(i)
+				end = true
+				break
+			}
+		} 
+	}
+	vm.cpu.V_registers[x]=key
+}
+
+// (FX15)
+// Load the value of VX into the delay timer DT.
+//
+// DT := VX
+func (vm *VM) exec_load_dt_vx(x uint16){
+	vm.timers.DT = vm.cpu.V_registers[x]
+}
+
+// (FX18)
+// Load the value of VX into the sound time ST.
+//
+// ST := VX
+func (vm *VM) exec_load_st_vx(x uint16){
+	vm.timers.ST = vm.cpu.V_registers[x]
+}
+
+// (FX1E)
+// Add the values of I and VX, and store the result in I.
+//
+// I := I + VX
+func (vm *VM) exec_add_i_vx(x uint16){
+	vm.cpu.I += uint16(vm.cpu.V_registers[x])
+}
 
 ///////////////////////
 
