@@ -4,11 +4,25 @@ import (
 	"math/rand"
 )
 
+func (vm *VM) exec_clear_screen() {
+	for i := 0; i < DISPLAY_HEIGHT; i++ {
+		for j := 0; j < DISPLAY_LENGTH/8; j++ {
+			vm.display.pixels[i][j] = uint8(0)
+		}
+	}
+	vm.display.dirty = true
+}
+
 // (00EE)
 // Return from a subroutine
 // pop the last address from the stack and set the PC to it.
 func (vm *VM) exec_subroutine_return() {
-	vm.cpu.PC, _ = vm.stack.Pop()
+	addr, err := vm.stack.Pop()
+	if err != nil {
+		// Handle stack underflow (return without CALL)
+		panic(err)
+	}
+	vm.cpu.PC = addr
 }
 
 // (1NNN)
@@ -18,10 +32,15 @@ func (vm *VM) exec_jump(nnn uint16) {
 }
 
 // (2NNN)
-// Call the subroutine at address NNN. It increments SP, puts the current PC at the top of the stack and sets PC to the address NNN.
+// Call the subroutine at address NNN.
+// Save the address of the next instruction on the stack (PC is already
+// advanced by fetch) and then jump to NNN.
 func (vm *VM) exec_call_nnn(nnn uint16) {
-	vm.cpu.PC += 2
-	vm.stack.Push(vm.cpu.PC)
+	// At this point PC already points to the next instruction (because of fetch())
+	if err := vm.stack.Push(vm.cpu.PC); err != nil {
+		// Handle stack overflow
+		panic(err)
+	}
 	vm.cpu.PC = nnn
 }
 
@@ -168,9 +187,9 @@ func (vm *VM) exec_subn_vxvy(x uint16, y uint16) {
 // (8XYE)
 // Shift left, or multiply VX by two. Store the most significant bit of VX in VF, and then multiply VX and store its value in VX
 //
-// VF := VX & 0x80 ; VX := VX * 2
+// VF := MSB(VX); VX <<= 1
 func (vm *VM) exec_shl_vxvy(x uint16) {
-	vm.cpu.V_registers[0xF] = vm.cpu.V_registers[x] & 0x80
+	vm.cpu.V_registers[0xF] = vm.cpu.V_registers[x] >> 7
 	vm.cpu.V_registers[x] <<= 1
 }
 
@@ -209,23 +228,27 @@ func (vm *VM) exec_rnd_vxnn(x uint16, nn uint16) {
 }
 
 // (EX9E)
-// Skip the next instruction if the key with the value of VX is currently pressed. Basically, increase PC by two if the key corresponding to the value in VX is pressed.
+// Skip the next instruction if the key with the value of VX (the value inside register VX) is currently pressed. Basically, increase PC by two if the key corresponding to the value in VX is pressed.
 //
 // if keys[VX] == 1: PC := PC + 2
 
-func (vm *VM) exec_skp_vx(x uint16){
-	if vm.keypad.keys_state[x]{
-		vm.cpu.PC+=2
+func (vm *VM) exec_skp_vx(x uint16) {
+	key_index := vm.cpu.V_registers[x]
+
+	if vm.keypad.keys_state[key_index] {
+		vm.cpu.PC += 2
 	}
 }
 
 // (EXA1)
-// Skip the next instruction if the key with the value of VX is currently not pressed. Basically, increase PC by two if the key corresponding to the value in VX is not pressed
+// Skip the next instruction if the key with the value of VX (the value inside register VX) is currently not pressed. Basically, increase PC by two if the key corresponding to the value in VX is not pressed
 //
 // if keys[VX] == 0: PC := PC + 2
-func (vm *VM) exec_sknp_vx(x uint16){
-	if !vm.keypad.keys_state[x]{
-		vm.cpu.PC+=2
+func (vm *VM) exec_sknp_vx(x uint16) {
+	key_index := vm.cpu.V_registers[x]
+
+	if !vm.keypad.keys_state[key_index] {
+		vm.cpu.PC += 2
 	}
 }
 
@@ -233,93 +256,164 @@ func (vm *VM) exec_sknp_vx(x uint16){
 // Read the delay timer register value into VX.
 //
 // VX := DT
-func (vm *VM) exec_load_vx_dt(x uint16){
-	vm.cpu.V_registers[x]=vm.timers.DT
+func (vm *VM) exec_load_vx_dt(x uint16) {
+	vm.cpu.V_registers[x] = vm.timers.DT
 }
 
 // (FX0A)
 // Wait for a key press, and then store the value of the key to VX.
 //
 // K := wait_input() ; VX := K
-func (vm *VM) exec_load_vx_k(x uint16){
-	var key uint8
-	var end bool = false
-	for !end{
-		for i:=0; i<16; i++{
-			if vm.keypad.keys_state[i]{
-				key = uint8(i)
-				end = true
-				break
-			}
-		} 
+func (vm *VM) exec_load_vx_k(x uint16) {
+	keyPressed := false
+
+	for i := 0; i < 16; i++ {
+		if vm.keypad.keys_state[i] {
+			vm.cpu.V_registers[x] = uint8(i)
+			keyPressed = true
+			break
+		}
 	}
-	vm.cpu.V_registers[x]=key
+
+	// If no key is pressed, step back the PC so that this same instruction
+	// is re-executed on the next cycle (emulating a blocking wait for input).
+	if !keyPressed {
+		vm.cpu.PC -= 2
+	}
 }
 
 // (FX15)
 // Load the value of VX into the delay timer DT.
 //
 // DT := VX
-func (vm *VM) exec_load_dt_vx(x uint16){
-	vm.timers.DT = vm.cpu.V_registers[x]
+func (vm *VM) exec_load_dt_vx(x uint16) {
+	vm.timers.SetDT(vm.cpu.V_registers[x])
 }
 
 // (FX18)
 // Load the value of VX into the sound time ST.
 //
 // ST := VX
-func (vm *VM) exec_load_st_vx(x uint16){
-	vm.timers.ST = vm.cpu.V_registers[x]
+func (vm *VM) exec_load_st_vx(x uint16) {
+	vm.timers.SetST(vm.cpu.V_registers[x])
 }
 
 // (FX1E)
 // Add the values of I and VX, and store the result in I.
 //
 // I := I + VX
-func (vm *VM) exec_add_i_vx(x uint16){
+func (vm *VM) exec_add_i_vx(x uint16) {
 	vm.cpu.I += uint16(vm.cpu.V_registers[x])
 }
 
-///////////////////////
-
-// DXYN TODO
-
-func (vm *VM) exec_DXYN(X, Y, N uint) {
-	/*
-		// values of inside registers at indexes X, Y
-		// I register contains needed sprite memory address
-
-		// cpu register VF is used to detect collisions, we set it to 0 before starting to draw
-		vm.cpu.V_registers[0xF] = uint8(0)
-
-		x_coord := vm.cpu.V_registers[X]
-		y_coord := vm.cpu.V_registers[Y]
-		I := vm.cpu.I
-
-		sprites_to_draw := make([]byte, N)
-
-		//save sprites to be drawn in slice "sprites_to_draw"
-		for curr_mem_addr := I; curr_mem_addr < I+uint16(N); curr_mem_addr++ {
-			sprites_to_draw[curr_mem_addr] = vm.mem.memory[curr_mem_addr]
-		}
-
-		//TODO: IMPLEMENT
-	*/
+// (FX29)
+// Set the location of the sprite for the digit VX to I.
+// The font sprites start at address 0x050, and contain the
+// hexadecimal digits from 1..F. Each font has a length of
+// 0x05 bytes. The memory address for the value in VX is put in I.
+//
+// I := FONTS_BASE_ADDRESS + VX * 0x05		(0x05 = 5 bytes is number of sprites (bytes) in every font char)
+func (vm *VM) exec_load_f_vx(x uint16) {
+	vm.cpu.I = FONTS_BASE_ADDRESS + uint16(vm.cpu.V_registers[x])*0x05
 }
 
-// calculate the new value for the screen pixel in that byte applying XOR
-// returns new pixel values and a flag that is true if collisions happened
-func apply_xor_verify_collision(screen uint8, sprite uint8) (screen_byte_post_xor uint8, collision_happened bool) {
+// (FX33)
+// Store the binary-coded decimal representation of VX in memory locations I, I+1 and I+2.
+//
+// VX is in the range 0..255. We take its decimal representation and split it into
+// hundreds, tens and ones:
+//
+// h := VX / 100
+// t := (VX - h * 100) / 10
+// o := VX - h * 100 - t * 10
+//
+// Then we store them at:
+// RAM[I]     := h
+// RAM[I + 1] := t
+// RAM[I + 2] := o
+func (vm *VM) exec_load_b_vx(x uint16) {
+	vx := vm.cpu.V_registers[x]
 
-	//screen: 			0 0 1 0 1 0 1 1
-	//sprite: 			1 0 0 0 1 1 0 1
-	//collision: 		0 0 0 0 1 0 0 1  if screen & sprite (bitwise and) is not 0 then collision, else no collision
-	//screen post xor:  1 0 1 0 0 1 1 0
+	h := vx / 100
+	t := (vx - h*100) / 10
+	o := vx - h*100 - t*10
 
-	flag := false
+	vm.mem.memory[vm.cpu.I] = h
+	vm.mem.memory[vm.cpu.I+1] = t
+	vm.mem.memory[vm.cpu.I+2] = o
+}
 
-	if screen&sprite != 0 {
-		flag = true
+// (FX55)
+// Store registers from V0 to VX in the main memory,
+// starting at location I. Note that X is the number
+// of the register, so we can use it in the loop.
+// In the following pseudo-code, V[i] allows for
+// indexed register access, so that VX == V[X].
+// NB: x register is inclusive
+//
+// for reg in 0..X: RAM[I + reg] := V[reg]
+func (vm *VM) exec_load_i_vx(x uint16) {
+	for idx := uint16(0); idx <= x; idx++ {
+		vm.mem.memory[vm.cpu.I+idx] = vm.cpu.V_registers[idx]
 	}
-	return screen ^ sprite, flag
+}
+
+// (FX65)
+// Load the memory data starting at address I into the registers V0 to VX
+// NB: x register is inclusive
+//
+// for reg in 0..X: V[reg] := RAM[I + reg]
+func (vm *VM) exec_load_vx_i(x uint16) {
+	for idx := uint16(0); idx <= x; idx++ {
+		vm.cpu.V_registers[idx] = vm.mem.memory[vm.cpu.I+idx]
+	}
+}
+
+// (DXYN)
+// DRW VX, VY, N
+// Draws an N-byte tall sprite starting at memory location I
+// at coordinates (VX, VY). Each sprite byte encodes a row of 8 pixels.
+// Pixels are XORed onto the display. VF is set to 1 if any pixel
+// is unset as a result of this operation (collision), otherwise 0.
+// This implementation wraps around the screen edges.
+func (vm *VM) exec_draw_vxvy_n(x, y, n uint16) {
+	vx := vm.cpu.V_registers[x]
+	vy := vm.cpu.V_registers[y]
+
+	// Reset collision flag
+	vm.cpu.V_registers[0xF] = 0
+
+	for row := uint16(0); row < n; row++ {
+		spriteByte := vm.mem.memory[vm.cpu.I+row]
+
+		// Y position with vertical wrap
+		yPos := (uint16(vy) + row) % DISPLAY_HEIGHT
+		yIdx := int(yPos)
+
+		for bit := uint16(0); bit < 8; bit++ {
+			// Check current bit of the sprite row (MSB is leftmost)
+			if (spriteByte & (0x80 >> bit)) == 0 {
+				continue
+			}
+
+			// X position with horizontal wrap
+			xPos := (uint16(vx) + bit) % DISPLAY_LENGTH
+			xIdx := int(xPos)
+
+			byteIdx := xIdx / 8              // which byte in the row
+			bitOffset := uint8(xIdx % 8)     // which bit in that byte (0..7)
+			mask := uint8(0x80 >> bitOffset) // MSB-first mapping
+
+			// Collision: pixel was set and will be toggled off
+			if vm.display.pixels[yIdx][byteIdx]&mask != 0 {
+				vm.cpu.V_registers[0xF] = 1
+			}
+
+			// XOR the pixel
+			vm.display.pixels[yIdx][byteIdx] ^= mask
+		}
+	}
+
+	// Mark display as dirty so the framebuffer will be rebuilt
+	vm.display.dirty = true
 }

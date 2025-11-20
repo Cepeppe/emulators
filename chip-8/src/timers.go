@@ -8,7 +8,7 @@ import (
 
 // Update frequency is 60 Hz
 // We use millis, so delta is 1000 ms / 60
-const update_delta_millis = int64(1000 / 60)
+const update_delta_millis = uint64((time.Second / 60) / time.Millisecond)
 
 // Operations on this data structure are atomic
 // and must be performed using exposed API only
@@ -20,10 +20,12 @@ type TIMERS struct {
 	DT uint8
 
 	// must be set when setting up ST and after every decrement
-	ST_last_decrement_ts int64
+	ST_last_decrement_ts uint64
+	ST_next_decrement_ts uint64
 
 	// must be set when setting up DT and after every decrement
-	DT_last_decrement_ts int64
+	DT_last_decrement_ts uint64
+	DT_next_decrement_ts uint64
 }
 
 func (t *TIMERS) Init() {
@@ -33,25 +35,30 @@ func (t *TIMERS) Init() {
 
 func (t *TIMERS) SetST(value uint8) {
 	t.ST = value
-	t.ST_last_decrement_ts = time.Now().UnixMilli()
+	t.ST_last_decrement_ts = uint64(time.Now().UnixMilli())
+	t.ST_next_decrement_ts = t.ST_last_decrement_ts + update_delta_millis
 }
 
 func (t *TIMERS) SetDT(value uint8) {
 	t.DT = value
-	t.DT_last_decrement_ts = time.Now().UnixMilli()
+	t.DT_last_decrement_ts = uint64(time.Now().UnixMilli())
+	t.DT_next_decrement_ts = t.DT_last_decrement_ts + update_delta_millis
 }
 
+// Check current time and decide if decrement is needed
 func (t *TIMERS) Update() {
-	now := time.Now().UnixMilli()
+	now := uint64(time.Now().UnixMilli())
 
-	if t.ST != 0 && now-t.ST_last_decrement_ts >= update_delta_millis {
+	for t.ST > 0 && now >= t.ST_next_decrement_ts {
 		t.ST--
-		t.ST_last_decrement_ts = now
+		t.ST_last_decrement_ts = t.ST_next_decrement_ts
+		t.ST_next_decrement_ts += update_delta_millis
 	}
 
-	if t.DT != 0 && now-t.DT_last_decrement_ts >= update_delta_millis {
+	for t.DT > 0 && now >= t.DT_next_decrement_ts {
 		t.DT--
-		t.DT_last_decrement_ts = now
+		t.DT_last_decrement_ts = t.DT_next_decrement_ts
+		t.DT_next_decrement_ts += update_delta_millis
 	}
 }
 
@@ -81,8 +88,5 @@ func (t *TIMERS) Dump() {
 }
 
 func (t *TIMERS) shouldBeep() bool {
-	if t.ST > 0 {
-		return true
-	}
-	return false
+	return t.ST > 0
 }

@@ -18,9 +18,6 @@ coverage*.out
 *.coverprofile
 *.prof
 
-# --- Go modules ---
-# go.mod and go.sum must stay versioned
-
 # --- Editors / IDEs ---
 .vscode/
 .idea/

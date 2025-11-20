@@ -1,4 +1,7 @@
 http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
+https://austinmorlan.com/posts/chip8_emulator/
+
+https://tonisagrista.com/blog/2021/chip8-spec/
 
 https://tobiasvl.github.io/blog/write-a-chip-8-emulator/

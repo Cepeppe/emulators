@@ -21,13 +21,41 @@ type VM struct {
 	timers  TIMERS
 }
 
-// Update is called approximately 60 times per second.
-// CPU steps, timers, and input handling will be placed here.
-func (vm *VM) Update() error {
+var dumpCounter int = 0
 
+// Update is called approximately 60 times per second, advances the VM by one frame:
+// - Polls the keypad
+// - Executes a fixed number of instructions for this frame
+// - Updates timers at 60 Hz
+// - Triggers sound if needed
+func (vm *VM) Update() error {
+	// Update current keypad state (keys pressed this frame)
 	vm.keypad.updatePressedKeys()
+
+	// Execute X instructions per frame
+	// Example: 10 instructions * 60 FPS ≈ 600 Hz CPU frequency
+	instructionsPerFrame := 10
+	for i := 0; i < instructionsPerFrame; i++ {
+		if err := vm.ExecuteNextInstruction(); err != nil {
+			vm.Dump()
+			return err
+		}
+	}
+
+	// Chip-8 delay and sound timers decrement at 60 Hz,
+	// so they are updated once per frame (outside the instruction loop).
+	vm.timers.Update()
+
+	// If the sound timer is active, play a beep.
+	// audio should be handled asynchronously; blocking here would stall the main loop.
 	if vm.timers.shouldBeep() {
 		PlayBeep()
+	}
+
+	dumpCounter++
+	if dumpCounter > 60*10 { // Dump state periodically
+		dumpCounter = 0
+		vm.Dump()
 	}
 
 	return nil
@@ -76,10 +104,18 @@ func NewVM(romPath string) (*VM, error) {
 	return &vm, nil
 }
 
+func (vm *VM) RunSingleMachineCycle() {
+	err := vm.ExecuteNextInstruction()
+	if err != nil {
+		panic(err)
+	}
+
+}
+
 func (vm *VM) ExecuteNextInstruction() error {
 	instr, err := vm.fetch()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return vm.decode_execute(instr)
@@ -128,13 +164,12 @@ func (vm *VM) decode_execute(instr uint16) error {
 	switch op_code {
 	case 0x0: //Execute machine language routine: must not be implemented in our case
 		if nnn == 0x0E0 { // 00E0: Clear screenPermalink: It should clear the display, turning all pixels off to 0.
-
+			vm.exec_clear_screen()
 		} else if nnn == 0x0EE { // (00EE) Return from a subroutine
 			// pop the last address from the stack and set the PC to it.
 			vm.exec_subroutine_return()
 		} else {
 			// 0NNN: Execute machine language routine, must not be implemented in our case
-
 		}
 	case 0x1: // JUMP (1NNN): Jump to the address in NNN. Sets the PC to NNN.
 		vm.exec_jump(nnn)
@@ -191,7 +226,7 @@ func (vm *VM) decode_execute(instr uint16) error {
 		vm.exec_rnd_vxnn(x, nn)
 
 	case 0xD: // DRAW (DXYN): DRW VX, VY, N Draw instruction. For algorithm documentation see the impl or the pdf about dxyn
-		//TODO: IMPL
+		vm.exec_draw_vxvy_n(x, y, n)
 
 	case 0xE:
 		if nn == 0x9E { // SKIP PRESSED (EX9E): SKP VX Skip the next instruction if the key with the value of VX is currently pressed. Basically, increase PC by two if the key corresponding to the value in VX is pressed.
@@ -211,12 +246,14 @@ func (vm *VM) decode_execute(instr uint16) error {
 			vm.exec_load_st_vx(x)
 		} else if nn == 0x1E { // ADDI (FX1E): ADD I, VX Add the values of I and VX, and store the result in I.
 			vm.exec_add_i_vx(x)
-		} else if nn == 0x29 {
-
-		} else if nn == 0x33 {
-
-		} else if nn == 0x55 {
-
+		} else if nn == 0x29 { // LOAD (FX29): LD F, VX Set the location of the sprite for the digit VX to I.
+			vm.exec_load_f_vx(x)
+		} else if nn == 0x33 { // LOAD (FX33): LD B, VX Store the binary-coded decimal representation of VX in memory locations I, I+1 and I+2.
+			vm.exec_load_b_vx(x)
+		} else if nn == 0x55 { // LOAD (FX55): LD [I], VX Store registers from V0 to VX in the main memory, starting at location I
+			vm.exec_load_i_vx(x)
+		} else if nn == 0x65 { // LOAD (FX65):
+			vm.exec_load_vx_i(x)
 		}
 
 	default:
@@ -226,11 +263,8 @@ func (vm *VM) decode_execute(instr uint16) error {
 	return nil
 }
 
-func execDisplay(vm *VM) error {
-	return nil
-}
-
 func (vm *VM) Dump() {
+	terminal_cls()
 	vm.mem.Dump(0x00, 0x1000) //0, 4096
 	vm.cpu.Dump()
 	vm.stack.Dump()

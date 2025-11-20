@@ -35,6 +35,8 @@ const RESERVED_MEMORY_END uint16 = 0x1FF  //511
 const PROGRAM_MEMORY_START uint16 = 0x200 //512
 const MEMORY_END uint16 = 0xFFF           //4095
 
+const FONTS_BASE_ADDRESS uint16 = 0x050 // Font start address
+
 type MEM struct {
 	memory [MEMORY_SPACE_BYTES]byte
 }

@@ -56,7 +56,7 @@ const cpuDumpInnerWidth = 55
 
 type CPU struct {
 
-	//General purpose registers
+	// General purpose registers
 	// VF register should not be used by any program
 	V_registers [16]uint8
 
