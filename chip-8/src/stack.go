@@ -80,7 +80,7 @@ func (st *STACK) Dump() {
 	}
 
 	printSep()
-	// SP is int8, show as 8-bit value with padding like other 8-bit registers
+	// SP is int8, shown as 8-bit value with padding like other 8-bit registers
 	printLine(fmt.Sprintf("SP (stack pointer): %s (%3d)", formatBits8(uint8(st.SP)), st.SP))
 	printSep()
 }

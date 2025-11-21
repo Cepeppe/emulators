@@ -58,16 +58,10 @@ func selectGame(romDir string) (string, error) {
 		}
 		name := e.Name()
 
-		// Optional: skip hidden files
 		if strings.HasPrefix(name, ".") {
 			continue
 		}
-
-		// Optional: filter by extension, e.g. .ch8
-		// if filepath.Ext(name) != ".ch8" {
-		//     continue
-		// }
-
+		
 		roms = append(roms, name)
 	}
 

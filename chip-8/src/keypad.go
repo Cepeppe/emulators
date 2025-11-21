@@ -11,7 +11,7 @@ import (
 	The computers which originally used the Chip-8 Language had
 	a 16-key hexadecimal keypad with the following layout:
 
-	   DEFAULT						MINE
+	    NATIVE						MINE
 	1	2	3	C				1	2	3	4
 	4	5	6	D		==>		Q	W	E	R
 	7	8	9	E		==>		A	S	D	F
@@ -25,12 +25,6 @@ import (
 */
 
 const (
-	// CHIP-8 native keypad layout:
-	// 1  2  3  C
-	// 4  5  6  D
-	// 7  8  9  E
-	// A  0  B  F
-
 	KEY_1 = 0x1
 	KEY_2 = 0x2
 	KEY_3 = 0x3
@@ -71,7 +65,7 @@ func (k *KEYPAD) updatePressedKeys() {
 	   A   0   B   F           Z   X   C   V
 	*/
 
-	// key CHIP-8      ->      tasto fisico PC
+	// key CHIP-8      ->      PC phisical key
 
 	k.keys_state[KEY_1] = ebiten.IsKeyPressed(ebiten.Key1)
 	k.keys_state[KEY_2] = ebiten.IsKeyPressed(ebiten.Key2)
